@@ -1,0 +1,197 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>水下机器人控制面板</title>
+</head>
+<script type=text/javascript src="jquery.js"> </script>
+<script type="text/javascript">
+function parseJson(w)
+    {
+        return eval("("+w+")");
+    }
+
+ws = new WebSocket('ws://192.168.1.196:8888/soc');
+//ws = new WebSocket('ws://169.254.0.2:8888/soc');
+ws.onmessage = function(event) {
+    var recvStr=event.data;
+    var jsondata = parseJson(recvStr);
+    pressure=jsondata.pressure;
+    depth=jsondata.depth;
+    anglex=jsondata.anglex;
+    angley=jsondata.angley;
+    anglez=jsondata.anglez;
+    temperature=jsondata.temperature;
+    volts=jsondata.volts;
+    $('#pressure').text(pressure);
+    $('#depth').text(depth);
+    $('#anglex').text(anglex);
+    $('#angley').text(angley);
+    $('#anglez').text(anglez);
+    $('#temperature').text(temperature);
+    $('#volt').text(volts);
+  }
+
+function send() { 
+    var data = {
+        'type':'SpeedControlZ',
+        'content':$("#SpeedControlZ").val(),
+    };
+    ws.send(JSON.stringify(data));
+    }
+
+ function verticalSpeedChange()
+    {
+        $('#speedValueZ').html($('#defaultSliderZ').val());  
+        var data = {
+        'type':'SpeedControlZ',
+        'content':$("#defaultSliderZ").val(),
+        };
+        ws.send(JSON.stringify(data));
+    }
+
+    function depthChange()
+    {
+         $('#targetDepthValue').html($('#defaultSliderDepth').val());  
+        var data = {
+        'type':'targetDepth',
+        'content':$("#defaultSliderDepth").val(),
+        };
+        ws.send(JSON.stringify(data));
+    }
+
+    function ySpeedChange()
+    {
+        $('#speedValueY').html($('#defaultSliderY').val());  
+        var data = {
+        'type':'SpeedControlY',
+        'content':$("#defaultSliderY").val(),
+        };
+        ws.send(JSON.stringify(data));
+    }
+
+    function rollChange()
+    {
+        $('#rollValue').html($('#roll').val());  
+        var data = {
+        'type':'Roll',
+        'content':$("#roll").val(),
+        };
+        ws.send(JSON.stringify(data));
+    }
+
+    function lightTurned()
+    {
+        if($('#light').html()=="打开")
+        {
+            $('#light').html("关闭");
+            var data = {
+                'type':'LedControl',
+                'content':"k"
+                    };
+        }
+        else
+        {
+            $('#light').html("打开")
+            var data = {
+                'type':'LedControl',
+                'content':"g"
+                    };
+        }
+        ws.send(JSON.stringify(data));
+    }
+
+    function attachMotor()
+    {
+        if($('#attachMotor').html()=="开启")
+        {
+            $('#attachMotor').html("关闭");
+            var data = {
+                'type':'Attach',
+                'content':"k"
+                    };
+        }
+        else
+        {
+            $('#attachMotor').html("开启")
+            var data = {
+                'type':'Detach',
+                'content':"g"
+                    };
+        }
+        ws.send(JSON.stringify(data));
+    }
+
+    function pidControl()
+    {
+        if($('#pidControl').html()=="开启")
+        {
+            $('#pidControl').html("关闭");
+            var data = {
+                'type':'Pid',
+                'content':"k"
+                    };
+        }
+        else
+        {
+            $('#pidControl').html("关闭")
+            var data = {
+                'type':'Pid',
+                'content':"g"
+                    };
+        }
+        ws.send(JSON.stringify(data));
+    }
+
+
+        function initMotor()
+    {  
+            var data = {
+                'type':'InitMotor',
+                'content':"k"
+                    };
+        ws.send(JSON.stringify(data));
+    }
+</script>
+
+<body background="1.jpg">
+<div style="position:fixed; top:15%; right:0%;">
+目标深度压控: <span id="targetDepthValue">1000</span><br>
+<input id="defaultSliderDepth" orient="vertical" style="width:300px" type="range" value="1000" min="1000" max="1100" oninput="depthChange()" /> <br>
+<br>
+PID:&nbsp;&nbsp;<button id="pidControl" onclick="pidControl()">开启</button><br><br>
+</div>
+
+
+<div  style="position:fixed; top:20%; left:10%;">
+压强：<font id="pressure"></font>mBa<br><br><br>
+深度：<font id="depth"></font>m<br><br><br>
+温度：<font id="temperature"></font>℃<br><br><br>
+角度x：<font id="anglex"></font><br><br><br>
+角度y：<font id="angley"></font><br><br><br>
+角度z：<font id="anglez"></font><br><br><br>
+电压: <font id="volt"></font>
+</div>
+<div style="position:fixed; top:50%; right:10%;">
+启动电机&nbsp;&nbsp;<button id="attachMotor" onclick="attachMotor()">开启</button><br><br>
+初始化电机&nbsp;&nbsp;<button id="initMotor" onclick="initMotor()">初始化</button><br><br>
+前视灯&nbsp;&nbsp;<button id="light" onclick="lightTurned()">打开</button><br><br>
+</div>
+
+<div id="webcam" align="center"><img id="streamimage" src="2.jpg" /></div>
+
+<div align="center">
+<br>
+升降速度<span id="speedValueZ">0</span>&nbsp;
+<input id="defaultSliderZ" orient="vertical" style="width:600px" type="range" value="0" min="0" max="500" oninput="verticalSpeedChange()" /> <br>
+<br>
+前进速度<span id="speedValueY">0</span>&nbsp;
+<input id="defaultSliderY" orient="vertical" style="width:600px" type="range" value="0" min="0" max="500" oninput="ySpeedChange()" /> <br>
+<br>
+横向偏转<span id="rollValue">0</span>&nbsp;
+<input id="roll"  style="width:600px" type="range" value="0" min="-500" max="500" oninput="rollChange()" /> <br>
+</div>
+
+</body>
+</html>
