@@ -47,7 +47,7 @@ int motor3Speed=0;
 int motor4Speed=0;
 
 bool PIDStart=false;
-
+bool openMs5803=true;
 
 void MotorPIDControl()
 {
@@ -80,6 +80,18 @@ void MotorAttach()
   motor2.attach(2,motor2_min_pwm,motor2_max_pwm);
   motor3.attach(3,motor3_min_pwm,motor3_max_pwm);
   motor4.attach(5,motor4_min_pwm,motor4_max_pwm);
+}
+
+void MotorAttach2()
+{
+  motor1.attach(4,motor1_min_pwm,motor1_max_pwm);
+  motor2.attach(2,motor2_min_pwm,motor2_max_pwm);
+  motor3.attach(3,motor3_min_pwm,motor3_max_pwm);
+  motor4.attach(5,motor4_min_pwm,motor4_max_pwm);
+  motor1.writeMicroseconds(1000);
+  motor2.writeMicroseconds(1000);
+  motor3.writeMicroseconds(1000);
+  motor4.writeMicroseconds(1000);
 }
 
 void MotorInit()
@@ -273,7 +285,15 @@ void Action(String commandHead,String commandTail)
             Serial.print(horizonPressure);
             Serial.println("}");
           break;
-  
+
+          case 'b':
+            MotorAttach();
+          break;
+
+          case 'c':
+            MotorAttach2();
+          break;
+          
           case 'B'://set max pwm of motor1
             MotorInit();
             //Serial.println("{ok}");
@@ -318,19 +338,23 @@ void Action(String commandHead,String commandTail)
               turnOffLed();
           break;
 
+          case 'j':
+            if(commandTail[0]=='1')
+              openMs5803=true;
+            else
+              openMs5803=false;
+          break;
+
           case 's'://start pid control 
             startPID();
-            //Serial.println("{ok}");
           break;
 
           case 't'://stop pid control
             stopPID();
-            //Serial.println("{ok}");
           break; 
 
           case 'p'://stop all motor
             stopAllMotors();
-            //Serial.println("{ok}");
           break;
       }
     }
@@ -459,7 +483,7 @@ void setup()
     Serial3.begin(115200);
     pinMode(LED,OUTPUT);
     turnOffLed();
-    MotorAttach();
+    
     sensor.reset();
     sensor.begin();
     inturruptPeriod=30;
@@ -467,6 +491,7 @@ void setup()
     //Timer1.attachInterrupt(taskDistribute);
     errorSum=0;//PID control paramater
     PIDStart=false;
+    openMs5803=true;
 }
 
 void loop()
@@ -481,6 +506,9 @@ void loop()
             ParseString(recvData);
         }
     }
-    readMs5803Pressure();//Every loop do a pressure update,this takes about 25ms.
+    if(openMs5803)
+      readMs5803Pressure();//Every loop do a pressure update,this takes about 25ms.
+    else
+      delay(25);
     MotorPIDControl();
 }
